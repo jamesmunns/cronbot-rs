@@ -1,0 +1,11 @@
+[package]
+name = "cronbot"
+version = "0.1.0"
+authors = ["James Munns <james.munns@gmail.com>"]
+
+[dependencies]
+slack = "0.18.0"
+cron = "0.3.0"
+chrono = "~0.3"
+regex = "0.2"
+try_opt = "0.1.1"
