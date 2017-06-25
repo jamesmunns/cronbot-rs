@@ -1,17 +1,16 @@
 use slack::{self, Event, RtmClient, Message};
 use slack::api::MessageStandard;
-use std::env;
 use std::sync::mpsc::Sender;
 use regex::Regex;
 
-struct MyHandler {
-    msg_tx: Sender<BotCommand>,
+pub struct MyHandler {
+    pub msg_tx: Sender<BotCommand>,
 }
 
 #[allow(unused_variables)]
 impl slack::EventHandler for MyHandler {
     fn on_event(&mut self, cli: &RtmClient, event: Event) {
-        // println!("on_event(event: {:?})", event);
+        println!("on_event(event: {:?})", event);
         match event {
             Event::Message(box Message::Standard(msg)) => {
                 if let Some(cmd) = parse(msg.clone()) {
@@ -78,18 +77,4 @@ fn parse(msg: MessageStandard) -> Option<BotCommand> {
         channel: channel,
         user: user,
     }))
-}
-
-pub fn botmain (msg_tx: Sender<BotCommand>) {
-    let args: Vec<String> = env::args().collect();
-    let api_key = match args.len() {
-        0 | 1 => panic!("No api-key in args! Usage: cargo run --example slack_example -- <api-key>"),
-        x => args[x - 1].clone(),
-    };
-    let mut handler = MyHandler{ msg_tx: msg_tx };
-    let r = RtmClient::login_and_run(&api_key, &mut handler);
-    match r {
-        Ok(_) => {}
-        Err(err) => panic!("Error: {}", err),
-    }
 }

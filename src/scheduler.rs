@@ -1,5 +1,6 @@
 use cron;
 use chrono;
+use slack;
 use std::sync::mpsc::{TryRecvError, Receiver};
 use bot::BotCommand;
 use std::str::FromStr;
@@ -31,13 +32,15 @@ impl SchedulerEvent {
 pub struct Scheduler {
     crontab: Vec<SchedulerEvent>,
     rx_cmd: Receiver<BotCommand>,
+    response: slack::Sender,
 }
 
 impl Scheduler {
-    pub fn new(rx_cmd: Receiver<BotCommand>) -> Self {
+    pub fn new(rx_cmd: Receiver<BotCommand>, response: slack::Sender) -> Self {
         Scheduler {
             crontab: vec!(),
             rx_cmd: rx_cmd,
+            response: response,
         }
     }
 
@@ -52,9 +55,6 @@ impl Scheduler {
 
     pub fn handle_schedule(&mut self) {
         let now = chrono::UTC::now();
-        // let msgs = self.crontab.iter().filter_map(|mut e| {
-        //     if e.schedule.after(e.last_run).take(1)
-        // })
 
         // Loop through events for each:
         for e in self.crontab.iter_mut() {
@@ -65,15 +65,16 @@ impl Scheduler {
                     e.last_run = now;
                     println!("{}: {}", e.channel, e.message);
                     // print a message
+                    self.response.send_message(&e.channel, &e.message).unwrap();
                 }
             }
         }
     }
 }
 
-pub fn forever(rx: Receiver<BotCommand>) {
+pub fn forever(rx: Receiver<BotCommand>, response: slack::Sender) {
     let delay = Duration::from_millis(500);
-    let mut clock = Scheduler::new(rx);
+    let mut clock = Scheduler::new(rx, response);
 
     loop {
         sleep(delay);
